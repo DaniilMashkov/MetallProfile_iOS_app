@@ -148,7 +148,8 @@ struct ContentView: View {
                                 .focused($amountIsFocused)
                                 .multilineTextAlignment(.center)
                             if surface == "Roof"{
-                                Picker("Type", selection: $roofType) {ForEach (roofTypes, id: \.self)  {Text($0)}}.foregroundColor(.gray)
+                                Picker("", selection: $roofType) {ForEach (roofTypes, id: \.self)  {Text($0)}}
+                                    .foregroundColor(.gray)
                                     .pickerStyle(.menu)
                             
                             } else {
@@ -164,12 +165,13 @@ struct ContentView: View {
                                 TextField("Length 1", value: $length1, formatter: formatter)
                                     .keyboardType(.decimalPad)
                                     .focused($amountIsFocused)
-                                    .multilineTextAlignment(.center).offset(x: -29)
+                                    .multilineTextAlignment(.center)
                                 
                                 TextField("Width 1", value: $width1, formatter: formatter)
                                     .keyboardType(.decimalPad)
                                     .focused($amountIsFocused)
-                                    .multilineTextAlignment(.center).offset(x: -89)
+                                    .multilineTextAlignment(.center)
+                                TextField("", value: $height, formatter: formatter)
                             }
                     }
                         Spacer()
