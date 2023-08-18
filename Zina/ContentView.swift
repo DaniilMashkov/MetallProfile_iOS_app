@@ -6,6 +6,27 @@ struct MaterialList: Identifiable {
     var isChecked = false
 }
 
+struct CapsuleTextField: View {
+    @FocusState private var amountIsFocused: Bool
+    
+    var text: String
+    var value: Binding<Double>
+    
+    let formatter: NumberFormatter = {
+        let formatter = NumberFormatter()
+        formatter.numberStyle = .decimal
+        formatter.zeroSymbol = ""
+        return formatter
+        }()
+    
+    var body: some View {
+        TextField(text, value: value, formatter: formatter)
+            .keyboardType(.decimalPad)
+            .focused($amountIsFocused)
+            .multilineTextAlignment(.center)
+    }
+}
+
 struct ContentView: View {
     @FocusState private var amountIsFocused: Bool
     @State private var surface = "Roof"
@@ -38,13 +59,66 @@ struct ContentView: View {
     let surfaceTypes = ["Roof", "Facade"]
     let roofTypes = ["1x", "2x", "4x", "4x4"]
     
-    let formatter: NumberFormatter = {
-        let formatter = NumberFormatter()
-        formatter.numberStyle = .decimal
-        formatter.zeroSymbol = ""
-        return formatter
-        }()
-
+    var body: some View {
+        NavigationView {
+            Form{
+                VStack(spacing:15){
+                    Section(header:Text("Select type of surface").bold()) {
+                        Picker("Type of surface", selection: $surface)
+                            {ForEach(surfaceTypes, id: \.self) {Text($0)}}
+                            .pickerStyle(.segmented)
+                    }
+                    VStack(spacing:15) {
+                        HStack{
+                            CapsuleTextField(text: "Length", value: $length)
+                            CapsuleTextField(text: "Width", value: $width)
+                            if surface == "Roof"{
+                                Picker("", selection: $roofType)
+                                    {ForEach (roofTypes, id: \.self) {Text($0)}}
+                                    .foregroundColor(.gray)
+                                    .pickerStyle(.menu)
+                            
+                            } else {
+                                CapsuleTextField(text: "Height", value: $height)
+                                    .padding(.vertical, 6)
+                            }
+                        }
+                        if surface == "Roof" && roofType == "4x"{
+                            HStack{
+                                CapsuleTextField(text: "Length 1", value: $length1)
+                                CapsuleTextField(text: "Width1", value: $width1)
+                                CapsuleTextField(text: "", value: $height)
+                            }
+                        }
+                        Section{
+                            Button("Reset") {length=0.0; width=0.0; height=0.0; length1=0.0; width1=0.0}
+                                .buttonStyle(.borderless).tint(.red).cornerRadius(15)
+                        }
+                    }
+                }
+                Section {
+                    ForEach(surface == "Roof" ? $roofMaterials: $facadeMaterials)
+                        {$material in Toggle(material.id, isOn: $material.isChecked)
+                            material.isChecked ?
+                                Section {
+                                    Text("\(calculate(material:$material)) ")
+                                        .foregroundStyle(.cyan).font(.system(size: 15))
+                                } : nil
+                            }
+                        }
+            }
+            .navigationTitle("Materials calculating")
+            .navigationBarTitleDisplayMode(.inline)
+            .toolbar {
+                ToolbarItemGroup(placement: .keyboard) {
+                    Spacer()
+                    Button("Done") {amountIsFocused = false}
+                        .foregroundColor(.cyan)
+                    }
+                }
+            }
+        }
+    
     func calculate(material: Binding<MaterialList>) -> String {
         var message = ""
         var bay = 0.0
@@ -53,13 +127,13 @@ struct ContentView: View {
         switch material.id {
         case "Lb", "КД", "WS":
             if length == 0.0 || width == 0.0 || height == 0.0{
-                return "Установи длинну, ширину, высоту"
+                return "Установи длину, ширину, высоту"
             }
             if length < 0.5{
-                return "- Минимальная длинна 0.5мм"
+                return "- Минимальная длина 0.5мм"
             }
             if length > 6{
-                message += "- Внимание! Возможная длинна 0.5 - 6м. \n"
+                message += "- Внимание! Возможная длина 0.5 - 6м. \n"
             }
             if length == width{
                 bay = 1
@@ -80,7 +154,7 @@ struct ContentView: View {
             
         default:
             if length == 0.0 || width == 0.0 {
-                return "Установи длинну, ширину"
+                return "Установи длину, ширину"
             }
             if width > 12 {
                 message += "- Внимание! Возможная длина 0.5 - 12м. \n"
@@ -119,102 +193,6 @@ struct ContentView: View {
             message += "- Торцевая: \(additional2)"
             
             return message
-        }
-    }
-
-    
-    var body: some View {
-        NavigationView {
-            Form{
-                VStack {
-                    Section {
-                        Picker("Type of surface", selection: $surface)
-                        {ForEach(surfaceTypes, id: \.self)
-                            {Text($0)}
-                        }.pickerStyle(.segmented)
-                    } header: {
-                        Text("Select type of surface").bold()
-                    }
-                    Spacer()
-                    VStack {
-                        HStack{
-                            TextField("Length", value: $length, formatter: formatter)
-                                .keyboardType(.decimalPad)
-                                .focused($amountIsFocused)
-                                .multilineTextAlignment(.center)
-                            
-                            TextField("Width", value: $width, formatter: formatter)
-                                .keyboardType(.decimalPad)
-                                .focused($amountIsFocused)
-                                .multilineTextAlignment(.center)
-                            if surface == "Roof"{
-                                Picker("", selection: $roofType) {ForEach (roofTypes, id: \.self)  {Text($0)}}
-                                    .foregroundColor(.gray)
-                                    .pickerStyle(.menu)
-                            
-                            } else {
-                                TextField("Height", value: $height, formatter: formatter)
-                                    .keyboardType(.decimalPad)
-                                    .focused($amountIsFocused)
-                                    .multilineTextAlignment(.center)
-                                    .padding(.vertical, 6)
-                            }
-                        }
-                        if surface == "Roof" && roofType == "4x"{
-                            HStack{
-                                TextField("Length 1", value: $length1, formatter: formatter)
-                                    .keyboardType(.decimalPad)
-                                    .focused($amountIsFocused)
-                                    .multilineTextAlignment(.center)
-                                
-                                TextField("Width 1", value: $width1, formatter: formatter)
-                                    .keyboardType(.decimalPad)
-                                    .focused($amountIsFocused)
-                                    .multilineTextAlignment(.center)
-                                TextField("", value: $height, formatter: formatter)
-                            }
-                    }
-                        Spacer()
-                        Section{
-                            Button("Reset") {length=0.0; width=0.0; height=0.0; length1=0.0; width1=0.0}.buttonStyle(.borderless).tint(.red).cornerRadius(15)
-                        }
-                        }
-                        
-                }
-                Section {
-                    switch surface {
-                    case "Roof":
-                        ForEach($roofMaterials) {$material in Toggle(material.id, isOn: $material.isChecked)
-                            if material.isChecked{
-                                Section {
-                                    Text("\(calculate(material:$material)) ").foregroundStyle(.cyan).font(.system(size: 15))
-                                }
-                            }
-                        }
-                    case "Facade":
-                        ForEach($facadeMaterials) {$material in Toggle(material.id, isOn: $material.isChecked)
-                            if material.isChecked{
-                                Section {
-                                    Text("\(calculate(material:$material)) ").foregroundStyle(.cyan).font(.system(size: 15))
-                                }
-                            }
-                        }
-                    default:
-                        Text("Empty")
-                    }
-                }
-            }
-            .navigationTitle("Materials calculating")
-            .navigationBarTitleDisplayMode(.inline)
-            .toolbar {
-                ToolbarItemGroup(placement: .keyboard) {
-                    Spacer()
-                    
-                    Button("Done") {
-                        amountIsFocused = false
-                    }.foregroundColor(.cyan)
-                }
-            }
         }
     }
 }
